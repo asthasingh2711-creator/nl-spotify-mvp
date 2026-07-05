@@ -16,6 +16,7 @@ dist-ssr
 .env.*
 !.env.example
 server/.env
+data/training-log.jsonl
 
 # Editor directories and files
 .vscode/*

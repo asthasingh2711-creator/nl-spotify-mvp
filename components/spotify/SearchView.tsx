@@ -218,6 +218,7 @@ export function SearchView({ initialTab = 'All' }: { initialTab?: Tab }) {
               <p className="mb-4 text-sm text-spotify-text">
                 {curated.summary}
                 {curated.mode === 'live' && <span className="ml-2 text-spotify-green">· Spotify</span>}
+                {curated.planner === 'llm' && <span className="ml-2 text-spotify-green">· AI</span>}
               </p>
               <div className="mb-2 grid grid-cols-[16px_4fr_2fr_1fr] gap-4 border-b border-white/10 px-4 pb-2 text-xs uppercase text-spotify-text">
                 <span>#</span><span>Title</span><span>Album</span><span className="text-right">Duration</span>

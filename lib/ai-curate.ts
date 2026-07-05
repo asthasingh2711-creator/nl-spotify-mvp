@@ -7,6 +7,7 @@ import { searchSpotifyTracksRaw, spotifyTrackToPlayable } from './spotify/client
 import type { IntentFilters } from './types'
 import { buildSurpriseSearchQueries, getTasteSummary } from './user-taste'
 import type { AICurateResponse } from './ai-types'
+import { filterAvoidedTracks, planSpotifySearch } from './spotify-query-planner'
 
 export type { AICurateResponse } from './ai-types'
 
@@ -19,30 +20,15 @@ function dedupePlayable(tracks: PlayableTrack[]): PlayableTrack[] {
   })
 }
 
-function buildSpotifyQueries(intent: string, _filters: IntentFilters): string[] {
-  const trimmed = intent.trim()
-  const queries = [trimmed]
-
-  const likeMatch = trimmed.match(/\blike\s+(.+)$/i)
-  if (likeMatch) {
-    const reference = likeMatch[1].trim()
-    queries.push(reference)
-    queries.push(`${trimmed.replace(/\blike\s+/i, '')}`)
-    if (/sad|melanchol|moody/i.test(trimmed)) queries.push(`sad ${reference}`)
-    if (/happy|upbeat/i.test(trimmed)) queries.push(`upbeat ${reference}`)
-  }
-
-  return [...new Set(queries.map((q) => q.trim()).filter(Boolean))].slice(0, 4)
-}
-
-function demoPlaylist(intent: string, filters: IntentFilters, playlistName: string, summary: string): AICurateResponse {
+function demoPlaylist(intent: string, filters: IntentFilters, playlistName: string, summary: string, planner?: 'llm' | 'mock'): AICurateResponse {
   const byKeyword = searchCatalog(intent, 12)
   if (byKeyword.length > 0) {
-    return { mode: 'demo', intent, playlistName, summary, tracks: byKeyword }
+    return { mode: 'demo', planner, intent, playlistName, summary, tracks: byKeyword }
   }
   const candidates = filterAndRank(getAllTracks(), filters, 12)
   return {
     mode: 'demo',
+    planner,
     intent,
     playlistName,
     summary,
@@ -52,17 +38,29 @@ function demoPlaylist(intent: string, filters: IntentFilters, playlistName: stri
 
 export async function curatePlaylist(intent: string): Promise<AICurateResponse> {
   const trimmed = intent.trim()
+  const { plan, mode: plannerMode } = await planSpotifySearch(trimmed)
   const { filters } = await parseIntent(trimmed)
-  const playlistName = `AI Mix · ${trimmed.slice(0, 48)}`
-  const summary = `A curated playlist for "${trimmed}" based on your mood and vibe.`
+
+  const playlistName = plan.playlist_name
+  const summary = plan.summary || `A curated playlist for "${trimmed}".`
 
   if (hasSpotifyCredentials()) {
     try {
-      const queries = buildSpotifyQueries(trimmed, filters)
-      const batches = await Promise.all(queries.map((q) => searchSpotifyTracksRaw(q, 10)))
-      const tracks = dedupePlayable(batches.flat().map(spotifyTrackToPlayable)).slice(0, 15)
+      const batches = await Promise.all(
+        plan.search_queries.map((q) => searchSpotifyTracksRaw(q, 10)),
+      )
+      let tracks = dedupePlayable(batches.flat().map(spotifyTrackToPlayable))
+      tracks = filterAvoidedTracks(tracks, plan.avoid).slice(0, 15)
+
       if (tracks.length > 0) {
-        return { mode: 'live', intent: trimmed, playlistName, summary, tracks }
+        return {
+          mode: 'live',
+          planner: plannerMode,
+          intent: trimmed,
+          playlistName,
+          summary,
+          tracks,
+        }
       }
     } catch (err) {
       console.error('Spotify curate failed:', err)
@@ -74,6 +72,7 @@ export async function curatePlaylist(intent: string): Promise<AICurateResponse> 
     filters,
     playlistName,
     `${summary} (Demo mode — add Spotify credentials for live tracks.)`,
+    plannerMode,
   )
 }
 
