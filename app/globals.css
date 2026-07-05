@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@theme {
+  --color-spotify-black: #000000;
+  --color-spotify-dark: #121212;
+  --color-spotify-elevated: #181818;
+  --color-spotify-highlight: #282828;
+  --color-spotify-hover: #2a2a2a;
+  --color-spotify-green: #1db954;
+  --color-spotify-green-hover: #1ed760;
+  --color-spotify-text: #b3b3b3;
+  --color-spotify-text-muted: #6a6a6a;
+}
+
+body {
+  font-family: "Circular", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background: var(--color-spotify-dark);
+  color: white;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: hsla(0, 0%, 100%, 0.25);
+  border-radius: 4px;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: hsla(0, 0%, 100%, 0.3);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: white;
+}
+
+input[type="range"].progress::-webkit-slider-runnable-track {
+  background: linear-gradient(to right, white var(--progress, 0%), hsla(0, 0%, 100%, 0.3) var(--progress, 0%));
+}
