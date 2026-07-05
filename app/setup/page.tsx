@@ -93,17 +93,17 @@ export default function SetupPage() {
         <section className="mb-10">
           <h2 className="mb-4 text-xl font-bold">Step 2 — Add credentials locally</h2>
           <p className="mb-3 text-sm text-spotify-text">
-            Create a file called <code className="rounded bg-spotify-highlight px-1">.env.local</code> in the project folder:
+            Run this in your terminal (credentials stay local, never in chat):
           </p>
-          <pre className="overflow-x-auto rounded-lg bg-spotify-highlight p-4 text-sm text-white">{`SPOTIFY_CLIENT_ID=paste_your_client_id_here
-SPOTIFY_CLIENT_SECRET=paste_your_client_secret_here`}</pre>
+          <pre className="overflow-x-auto rounded-lg bg-spotify-highlight p-4 text-sm text-white">{`cd "/Users/asthasingh/Desktop/NL Spotify MVP"
+npm run setup:spotify`}</pre>
           <p className="mt-3 text-sm text-spotify-text">
-            Then restart the dev server:
+            It will prompt for Client ID and Client Secret and save them to{' '}
+            <code className="rounded bg-spotify-highlight px-1">.env.local</code> (git-ignored).
           </p>
-          <pre className="mt-2 overflow-x-auto rounded-lg bg-spotify-highlight p-4 text-sm text-white">{`cd "/Users/asthasingh/Desktop/NL Spotify MVP"
-npm run dev:clean`}</pre>
           <p className="mt-3 text-sm text-spotify-text">
-            Open <strong className="text-white">http://localhost:3000</strong> (not 5173). Sidebar should show &quot;Connected to Spotify&quot;.
+            Then restart: <code className="rounded bg-spotify-highlight px-1">npm run dev:clean</code>
+            {' '}→ open <strong className="text-white">http://localhost:3000</strong>
           </p>
         </section>
 

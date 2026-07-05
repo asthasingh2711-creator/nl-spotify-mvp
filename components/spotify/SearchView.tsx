@@ -11,8 +11,15 @@ const GENRES = ['Pop', 'Rock', 'Electronic', 'Jazz', 'Hip-Hop', 'Indie', 'Metal'
 export function SearchView() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<PlayableTrack[]>([])
-  const [mode, setMode] = useState<'demo' | 'live'>('demo')
+  const [connected, setConnected] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/spotify/health')
+      .then((r) => r.json())
+      .then((d: { connected: boolean }) => setConnected(d.connected))
+      .catch(() => setConnected(false))
+  }, [])
 
   useEffect(() => {
     const q = query.trim()
@@ -24,13 +31,11 @@ export function SearchView() {
     const timer = setTimeout(async () => {
       setLoading(true)
       try {
-        const res = await fetch(`/api/spotify/search?q=${encodeURIComponent(q)}&limit=25`)
-        const data = (await res.json()) as { mode: 'demo' | 'live' | 'error'; tracks: PlayableTrack[] }
-        setResults(data.tracks)
-        setMode(data.mode === 'live' ? 'live' : 'demo')
+        const res = await fetch(`/api/spotify/search?q=${encodeURIComponent(q)}&limit=10`)
+        const data = (await res.json()) as { mode: string; tracks: PlayableTrack[] }
+        setResults(data.tracks ?? [])
       } catch {
-        setResults(searchCatalog(q, 25))
-        setMode('demo')
+        setResults(searchCatalog(q, 10))
       } finally {
         setLoading(false)
       }
@@ -53,7 +58,7 @@ export function SearchView() {
             autoFocus
           />
         </div>
-        {mode === 'live' && query.trim() && (
+        {connected && query.trim() && (
           <p className="mt-2 text-xs text-spotify-green">Live Spotify search</p>
         )}
       </div>
@@ -69,7 +74,7 @@ export function SearchView() {
           ) : results.length === 0 ? (
             <div className="text-spotify-text">
               <p>No results for &quot;{query}&quot;</p>
-              {mode === 'demo' && (
+              {!connected && (
                 <p className="mt-2 text-sm">
                   Demo catalog has limited tracks.{' '}
                   <a href="/setup" className="text-spotify-green hover:underline">Connect Spotify</a>

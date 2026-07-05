@@ -3,6 +3,8 @@ import type { SpotifyTrack } from './types'
 import type { PlayableTrack } from '@/lib/catalog'
 
 const SPOTIFY_API = 'https://api.spotify.com/v1'
+/** Spotify search limit for this app tier (requests above 10 return 400). */
+export const SPOTIFY_SEARCH_MAX = 10
 
 async function spotifyFetch<T>(path: string, params?: Record<string, string>): Promise<T> {
   const token = await getSpotifyAccessToken()
@@ -41,11 +43,12 @@ export function spotifyTrackToPlayable(track: SpotifyTrack): PlayableTrack {
   }
 }
 
-export async function searchSpotifyTracks(query: string, limit = 20): Promise<PlayableTrack[]> {
+export async function searchSpotifyTracks(query: string, limit = 10): Promise<PlayableTrack[]> {
+  const safeLimit = Math.min(Math.max(limit, 1), SPOTIFY_SEARCH_MAX)
   const data = await spotifyFetch<{ tracks: { items: SpotifyTrack[] } }>('/search', {
     q: query,
     type: 'track',
-    limit: String(Math.min(limit, 50)),
+    limit: String(safeLimit),
     market: 'US',
   })
   return data.tracks.items.map(spotifyTrackToPlayable)

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { hasSpotifyCredentials } from '@/lib/spotify/config'
-import { searchSpotifyTracks } from '@/lib/spotify/client'
+import { searchSpotifyTracks, SPOTIFY_SEARCH_MAX } from '@/lib/spotify/client'
 import { searchCatalog } from '@/lib/catalog'
 
 export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get('q')?.trim() ?? ''
-  const limit = Math.min(Number(request.nextUrl.searchParams.get('limit') ?? 20), 50)
+  const rawLimit = Number(request.nextUrl.searchParams.get('limit') ?? SPOTIFY_SEARCH_MAX)
+  const limit = Math.min(Math.max(Number.isFinite(rawLimit) ? rawLimit : SPOTIFY_SEARCH_MAX, 1), SPOTIFY_SEARCH_MAX)
 
   if (!query) {
     return NextResponse.json({ mode: 'demo', tracks: [] })
