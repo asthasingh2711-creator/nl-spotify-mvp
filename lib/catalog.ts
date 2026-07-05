@@ -13,6 +13,7 @@ export interface PlayableTrack {
   genre: string
   spotifyUrl?: string
   hasPreview?: boolean
+  explicit?: boolean
 }
 
 export interface Playlist {

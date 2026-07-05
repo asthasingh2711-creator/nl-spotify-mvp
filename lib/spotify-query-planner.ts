@@ -1,6 +1,7 @@
 import { callGeminiJson, hasGeminiKey, hasPlannerKey } from './gemini'
 import { hasLlmKey } from './llm'
 import { getTasteSummary, getUserTasteKeywords } from './user-taste'
+import { isFamilySafeIntent } from './content-safety'
 
 export interface SpotifyQueryPlan {
   playlist_name: string
@@ -20,6 +21,7 @@ Rules:
 - Personalize language/genre from user taste when it fits — but the User request defines the occasion. Do NOT map generic "celebration" or "joyful" to wedding/bridal unless the user explicitly asks for wedding, bridal, varmala, or baraat.
 - Disambiguate occasions: newborn/baby shower/namkaran ≠ wedding; birthday party ≠ wedding; graduation ≠ wedding. Match the specific life event, not the broadest "celebratory" bucket.
 - When user taste includes bridal/wedding, treat it as one library theme — not a default for every happy or festive request.
+- Family/child safety: for baby, newborn, kids, nursery, lullaby, or family contexts — ONLY clean, family-friendly tracks. Prefer "clean", "kids", or "lullaby" in search queries. Never surface explicit, sexual, violent, or profane content. These requests are often played on speakers around children.
 
 Examples:
 User: depression uplifting sound
@@ -62,7 +64,7 @@ User: peaceful but powerful
 {"playlist_name":"Still Strong","summary":"Emotionally uplifting tracks with restrained intensity.","search_queries":["cinematic post rock","epic ambient","powerful orchestral","hopeful instrumental"],"avoid":["death metal"]}
 
 User: newborn boy celebration
-{"playlist_name":"Welcome Little One","summary":"Sweet, joyful Hindi and Bollywood for a newborn baby boy — family celebration, not wedding music.","search_queries":["baby boy hindi songs","newborn celebration bollywood","joyful lullaby hindi","namkaran songs"],"avoid":["wedding","bridal","varmala","baraat"]}
+{"playlist_name":"Welcome Little One","summary":"Sweet, clean Hindi and Bollywood for a newborn baby boy — joyful family celebration, safe to play around children.","search_queries":["namkaran hindi songs","hindi baby songs bollywood","bollywood kids lullaby","baby boy welcome song hindi"],"avoid":["wedding","bridal","varmala","baraat","explicit"]}
 
 User: birthday party upbeat hindi
 {"playlist_name":"Birthday Bash","summary":"Upbeat Hindi party tracks for a birthday — fun and festive, not wedding procession music.","search_queries":["birthday party hindi","upbeat bollywood party","hindi celebration dance","fun bollywood hits"],"avoid":["wedding","bridal","varmala"]}`
@@ -178,7 +180,7 @@ function wordsOrDefault(text: string, fallback: string): string {
 function buildUserMessage(intent: string): string {
   const taste = getTasteSummary()
   const keywords = getUserTasteKeywords().slice(0, 8).join(', ')
-  return `User request: ${intent}\nUser taste (background genre preference only): ${taste}\nLibrary keywords: ${keywords || 'none'}\nImportant: Match the User request occasion exactly — do not substitute wedding/bridal themes unless explicitly requested.`
+  return `User request: ${intent}\nUser taste (background genre preference only): ${taste}\nLibrary keywords: ${keywords || 'none'}\nImportant: Match the User request occasion exactly — do not substitute wedding/bridal themes unless explicitly requested.${isFamilySafeIntent(intent) ? '\nCritical: This is a family/child context — recommend ONLY clean, age-appropriate music with no explicit content.' : ''}`
 }
 
 async function maybeLogTraining(intent: string, plan: SpotifyQueryPlan, source: 'llm' | 'mock') {

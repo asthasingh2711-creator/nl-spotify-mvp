@@ -8,6 +8,11 @@ import type { IntentFilters } from './types'
 import { buildSurpriseSearchQueries, getTasteSummary } from './user-taste'
 import type { AICurateResponse } from './ai-types'
 import { filterAvoidedTracks, planSpotifySearch } from './spotify-query-planner'
+import {
+  familySafeFallbackQueries,
+  filterFamilySafeTracks,
+  isFamilySafeIntent,
+} from './content-safety'
 
 export type { AICurateResponse } from './ai-types'
 
@@ -18,6 +23,39 @@ function dedupePlayable(tracks: PlayableTrack[]): PlayableTrack[] {
     seen.add(t.id)
     return true
   })
+}
+
+function applyTrackFilters(
+  tracks: PlayableTrack[],
+  avoid: string[] | undefined,
+  familySafe: boolean,
+): PlayableTrack[] {
+  let filtered = filterAvoidedTracks(tracks, avoid)
+  if (familySafe) filtered = filterFamilySafeTracks(filtered)
+  return filtered
+}
+
+async function fetchCuratedTracks(
+  queries: string[],
+  avoid: string[] | undefined,
+  familySafe: boolean,
+  intent: string,
+): Promise<PlayableTrack[]> {
+  const searchOpts = { familySafe }
+  const batches = await Promise.all(queries.map((q) => searchSpotifyTracksRaw(q, 10, searchOpts)))
+  let tracks = applyTrackFilters(dedupePlayable(batches.flat().map(spotifyTrackToPlayable)), avoid, familySafe)
+
+  if (familySafe && tracks.length < 8) {
+    const fallbacks = familySafeFallbackQueries(intent)
+    const extra = await Promise.all(fallbacks.map((q) => searchSpotifyTracksRaw(q, 10, searchOpts)))
+    tracks = applyTrackFilters(
+      dedupePlayable([...tracks, ...extra.flat().map(spotifyTrackToPlayable)]),
+      avoid,
+      familySafe,
+    )
+  }
+
+  return tracks.slice(0, 15)
 }
 
 function demoPlaylist(intent: string, filters: IntentFilters, playlistName: string, summary: string, planner?: 'llm' | 'mock'): AICurateResponse {
@@ -46,11 +84,8 @@ export async function curatePlaylist(intent: string): Promise<AICurateResponse> 
 
   if (hasSpotifyCredentials()) {
     try {
-      const batches = await Promise.all(
-        plan.search_queries.map((q) => searchSpotifyTracksRaw(q, 10)),
-      )
-      let tracks = dedupePlayable(batches.flat().map(spotifyTrackToPlayable))
-      tracks = filterAvoidedTracks(tracks, plan.avoid).slice(0, 15)
+      const familySafe = isFamilySafeIntent(trimmed)
+      const tracks = await fetchCuratedTracks(plan.search_queries, plan.avoid, familySafe, trimmed)
 
       if (tracks.length > 0) {
         return {
@@ -58,7 +93,9 @@ export async function curatePlaylist(intent: string): Promise<AICurateResponse> 
           planner: plannerMode,
           intent: trimmed,
           playlistName,
-          summary,
+          summary: familySafe
+            ? `${summary} Family-friendly picks only — no explicit tracks.`
+            : summary,
           tracks,
         }
       }

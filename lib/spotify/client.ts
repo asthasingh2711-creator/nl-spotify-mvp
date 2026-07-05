@@ -7,6 +7,11 @@ const SPOTIFY_API = 'https://api.spotify.com/v1'
 /** Spotify search limit for this app tier (requests above 10 return 400). */
 export const SPOTIFY_SEARCH_MAX = 10
 
+export interface SpotifySearchOptions {
+  /** When true, Spotify omits explicit tracks from search results. */
+  familySafe?: boolean
+}
+
 async function spotifyFetch<T>(path: string, params?: Record<string, string>): Promise<T> {
   const token = await getSpotifyAccessToken()
   const url = new URL(`${SPOTIFY_API}${path}`)
@@ -41,22 +46,39 @@ export function spotifyTrackToPlayable(track: SpotifyTrack): PlayableTrack {
     genre: 'spotify',
     spotifyUrl: track.external_urls.spotify,
     hasPreview: Boolean(track.preview_url),
+    explicit: track.explicit,
   }
 }
 
-export async function searchSpotifyTracksRaw(query: string, limit = 10): Promise<SpotifyTrack[]> {
+export async function searchSpotifyTracksRaw(
+  query: string,
+  limit = 10,
+  options: SpotifySearchOptions = {},
+): Promise<SpotifyTrack[]> {
   const safeLimit = Math.min(Math.max(limit, 1), SPOTIFY_SEARCH_MAX)
-  const data = await spotifyFetch<{ tracks: { items: SpotifyTrack[] } }>('/search', {
+  const params: Record<string, string> = {
     q: query,
     type: 'track',
     limit: String(safeLimit),
     market: 'US',
-  })
-  return data.tracks.items
+  }
+  if (options.familySafe) {
+    params.explicit = 'exclude'
+  }
+  const data = await spotifyFetch<{ tracks: { items: SpotifyTrack[] } }>('/search', params)
+  let items = data.tracks.items
+  if (options.familySafe) {
+    items = items.filter((t) => !t.explicit)
+  }
+  return items
 }
 
-export async function searchSpotifyTracks(query: string, limit = 10): Promise<PlayableTrack[]> {
-  return (await searchSpotifyTracksRaw(query, limit)).map(spotifyTrackToPlayable)
+export async function searchSpotifyTracks(
+  query: string,
+  limit = 10,
+  options: SpotifySearchOptions = {},
+): Promise<PlayableTrack[]> {
+  return (await searchSpotifyTracksRaw(query, limit, options)).map(spotifyTrackToPlayable)
 }
 
 export async function getSpotifyTrack(trackId: string): Promise<PlayableTrack> {
