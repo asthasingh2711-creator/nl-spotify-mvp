@@ -1,6 +1,7 @@
 export interface SpotifyTrack {
   id: string
   name: string
+  popularity: number
   artists: { id: string; name: string }[]
   album: {
     id: string

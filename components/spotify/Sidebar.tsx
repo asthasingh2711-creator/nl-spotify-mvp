@@ -1,10 +1,20 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
-import { Home, Search, Library, Heart, Sparkles, Plus, Settings } from 'lucide-react'
-import { buildPlaylists } from '@/lib/catalog'
-import { SpotifyLogo } from './SpotifyLogo'
+import {
+  Library,
+  Plus,
+  PanelRightOpen,
+  Search as SearchIcon,
+  List,
+  Check,
+  Pin,
+  Sparkles,
+} from 'lucide-react'
+import { SIDEBAR_LIBRARY } from '@/lib/sidebar-library'
+import { usePlayer } from '@/context/PlayerContext'
+import { CoverImage } from './CoverImage'
 
 export type SpotifyPage = 'home' | 'search' | 'library' | 'playlist'
 
@@ -16,115 +26,120 @@ interface SidebarProps {
 }
 
 export function Sidebar({ currentPage, activePlaylistId, onNavigate, onOpenPlaylist }: SidebarProps) {
-  const [spotifyStatus, setSpotifyStatus] = useState<'loading' | 'live' | 'demo' | 'error'>('loading')
-
-  useEffect(() => {
-    fetch('/api/spotify/health')
-      .then((r) => r.json())
-      .then((d: { connected: boolean; mode: string }) => {
-        setSpotifyStatus(d.connected ? 'live' : d.mode === 'error' ? 'error' : 'demo')
-      })
-      .catch(() => setSpotifyStatus('demo'))
-  }, [])
-
-  const nav = [
-    { id: 'home' as SpotifyPage, label: 'Home', icon: Home },
-    { id: 'search' as SpotifyPage, label: 'Search', icon: Search },
-    { id: 'library' as SpotifyPage, label: 'Your Library', icon: Library },
-  ]
-
-  const playlists = buildPlaylists()
+  const [filter, setFilter] = useState<'Playlists' | 'Artists' | 'Albums'>('Playlists')
+  const [sortOpen, setSortOpen] = useState(false)
+  const { currentTrack } = usePlayer()
 
   return (
-    <aside className="flex h-full w-[350px] shrink-0 flex-col gap-2 bg-black p-2">
-      <div className="rounded-lg bg-spotify-elevated px-6 py-5">
-        <div className="flex items-center gap-3">
-          <SpotifyLogo className="h-8 w-8 text-spotify-green" />
-          <span className="text-2xl font-black tracking-tight">Spotify</span>
+    <aside className="flex h-full w-[420px] shrink-0 flex-col rounded-lg bg-[#121212]">
+      {/* Your Library header */}
+      <div className="flex items-center justify-between px-4 py-3">
+        <button className="flex items-center gap-3 text-base font-bold text-white hover:scale-105">
+          <Library size={22} />
+          Your Library
+        </button>
+        <div className="flex items-center gap-1">
+          <button className="flex items-center gap-1 rounded-full px-2 py-1 text-sm font-bold text-spotify-text hover:bg-white/10 hover:text-white">
+            <Plus size={18} />
+            <span className="hidden sm:inline">Create</span>
+          </button>
+          <button className="rounded-full p-2 text-spotify-text hover:bg-white/10 hover:text-white">
+            <PanelRightOpen size={18} />
+          </button>
         </div>
-        {spotifyStatus === 'live' && (
-          <p className="mt-2 text-xs text-spotify-green">● Connected to Spotify</p>
-        )}
-        {spotifyStatus === 'demo' && (
-          <Link href="/setup" className="mt-2 block text-xs text-spotify-text hover:text-white hover:underline">
-            Demo mode — set up Spotify credentials
-          </Link>
-        )}
-        {spotifyStatus === 'error' && (
-          <Link href="/setup" className="mt-2 block text-xs text-red-400 hover:underline">
-            Spotify auth failed — check setup
-          </Link>
-        )}
       </div>
 
-      <nav className="rounded-lg bg-spotify-elevated px-3 py-4">
-        <ul className="space-y-1">
-          {nav.map(({ id, label, icon: Icon }) => (
-            <li key={id}>
-              <button
-                onClick={() => onNavigate(id)}
-                className={`flex w-full items-center gap-4 rounded-md px-3 py-2.5 text-base font-bold transition-colors hover:text-white ${
-                  currentPage === id && !activePlaylistId ? 'text-white' : 'text-spotify-text'
-                }`}
-              >
-                <Icon size={24} strokeWidth={2.5} />
-                {label}
-              </button>
-            </li>
-          ))}
-          <li>
-            <Link
-              href="/discover"
-              className="flex w-full items-center gap-4 rounded-md px-3 py-2.5 text-base font-bold text-spotify-green transition-colors hover:bg-spotify-hover hover:text-spotify-green-hover"
-            >
-              <Sparkles size={24} />
-              Explain & Refine
-            </Link>
-          </li>
-        </ul>
-      </nav>
-
-      <div className="flex min-h-0 flex-1 flex-col rounded-lg bg-spotify-elevated">
-        <div className="flex items-center justify-between px-6 py-4">
-          <button className="flex items-center gap-2 text-sm font-bold text-spotify-text transition-colors hover:text-white">
-            <Library size={20} />
-            Your Library
-          </button>
-          <div className="flex gap-2">
-            <button className="rounded-full p-1 text-spotify-text hover:bg-spotify-hover hover:text-white">
-              <Plus size={18} />
-            </button>
-            <Link href="/setup" className="rounded-full p-1 text-spotify-text hover:bg-spotify-hover hover:text-white">
-              <Settings size={18} />
-            </Link>
-          </div>
-        </div>
-        <div className="overflow-y-auto px-2 pb-4">
+      {/* Filter chips */}
+      <div className="flex gap-2 px-4 pb-3">
+        {(['Playlists', 'Artists', 'Albums'] as const).map((f) => (
           <button
-            onClick={() => onOpenPlaylist('liked')}
-            className={`mb-1 flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-spotify-hover ${
-              activePlaylistId === 'liked' ? 'bg-spotify-hover text-white' : 'text-spotify-text'
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
+              filter === f ? 'bg-white/10 text-white' : 'bg-transparent text-spotify-text hover:text-white'
             }`}
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded bg-gradient-to-br from-indigo-700 to-purple-400">
-              <Heart size={16} fill="white" />
-            </div>
-            <span className="truncate font-medium">Liked Songs</span>
+            {f}
           </button>
-          {playlists.filter((p) => p.id !== 'liked').slice(0, 8).map((p) => (
-            <button
-              key={p.id}
-              onClick={() => onOpenPlaylist(p.id)}
-              className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-spotify-hover ${
-                activePlaylistId === p.id ? 'bg-spotify-hover text-white' : 'text-spotify-text'
-              }`}
-            >
-              <img src={p.cover} alt="" className="h-10 w-10 rounded object-cover" />
-              <span className="truncate font-medium">{p.name}</span>
-            </button>
-          ))}
-        </div>
+        ))}
       </div>
+
+      {/* Search + Recents */}
+      <div className="relative flex items-center justify-between px-4 pb-2">
+        <button className="text-spotify-text hover:text-white">
+          <SearchIcon size={16} />
+        </button>
+        <button
+          onClick={() => setSortOpen(!sortOpen)}
+          className="flex items-center gap-2 text-sm font-medium text-spotify-text hover:text-white"
+        >
+          Recents
+          <List size={16} />
+        </button>
+
+        {sortOpen && (
+          <div className="absolute top-8 right-4 z-30 w-52 rounded-md bg-[#282828] p-1.5 shadow-xl">
+            <p className="px-3 py-2 text-xs font-bold text-spotify-text">Sort by</p>
+            {['Recents', 'Recently Added', 'Alphabetical', 'Creator'].map((opt, i) => (
+              <button
+                key={opt}
+                className="flex w-full items-center justify-between rounded-sm px-3 py-2 text-sm text-white hover:bg-white/10"
+              >
+                {opt}
+                {i === 0 && <Check size={16} className="text-spotify-green" />}
+              </button>
+            ))}
+            <p className="mt-1 border-t border-white/10 px-3 py-2 text-xs font-bold text-spotify-text">View as</p>
+            <div className="flex gap-1 px-2 pb-1">
+              {[List, List, List, List].map((Icon, i) => (
+                <button key={i} className={`rounded p-2 ${i === 1 ? 'text-spotify-green' : 'text-spotify-text hover:text-white'}`}>
+                  <Icon size={16} />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Playlist list */}
+      <div className="min-h-0 flex-1 overflow-y-auto px-2">
+        {SIDEBAR_LIBRARY.map((pl, idx) => (
+          <button
+            key={`${pl.id}-${idx}`}
+            onClick={() => onOpenPlaylist(pl.id)}
+            className={`mb-0.5 flex w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-white/10 ${
+              activePlaylistId === pl.id ? 'bg-white/10' : ''
+            }`}
+          >
+            {pl.liked ? (
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-gradient-to-br from-[#450af5] to-[#c4efd9]">
+                <span className="text-xl text-white">♥</span>
+              </div>
+            ) : (
+              <CoverImage src={pl.cover} seed={pl.id} className="h-12 w-12 shrink-0 rounded object-cover" />
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-base font-normal text-white">{pl.name}</p>
+              <p className="flex items-center gap-1 truncate text-sm text-spotify-text">
+                {pl.pinned && <Pin size={12} className="shrink-0 text-spotify-green" fill="currentColor" />}
+                {pl.subtitle}
+              </p>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Mini now-playing (bottom of sidebar) */}
+      {currentTrack && (
+        <div className="mt-auto flex items-center gap-3 border-t border-white/10 bg-[#181818] px-3 py-2">
+          <CoverImage src={currentTrack.cover} seed={currentTrack.id} className="h-12 w-12 rounded object-cover" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-white">{currentTrack.title}</p>
+            <p className="truncate text-xs text-spotify-text">{currentTrack.artist}</p>
+          </div>
+          <Check size={18} className="shrink-0 text-spotify-green" />
+        </div>
+      )}
     </aside>
   )
 }

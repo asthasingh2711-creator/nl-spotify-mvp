@@ -142,7 +142,7 @@ export default function DiscoverPage() {
       <header className="mb-8">
         <div className="mb-2 flex items-center gap-2">
           <Sparkles className="text-spotify-green" size={28} />
-          <h1 className="text-3xl font-black tracking-tight">Explain & Refine</h1>
+          <h1 className="text-3xl font-black tracking-tight">AI Mode</h1>
         </div>
         <p className="max-w-2xl text-spotify-text">
           Session-based music discovery — describe what you want in plain language, get ranked

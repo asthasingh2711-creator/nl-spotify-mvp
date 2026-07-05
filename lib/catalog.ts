@@ -1,5 +1,6 @@
 import type { Track } from './types'
 import { getAllTracks } from './dataset'
+import { stockCover } from './stock-images'
 
 export interface PlayableTrack {
   id: string
@@ -28,6 +29,11 @@ const PREVIEWS = Array.from(
   (_, i) => `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${i + 1}.mp3`,
 )
 
+function resolveCover(track: Track): string {
+  if (!track.cover || track.cover.includes('placehold.co')) return stockCover(track.id)
+  return track.cover
+}
+
 export function toPlayable(track: Track): PlayableTrack {
   const num = parseInt(track.id.replace(/\D/g, ''), 10) || 1
   return {
@@ -37,7 +43,7 @@ export function toPlayable(track: Track): PlayableTrack {
     album: track.album,
     duration: 180 + (num % 120),
     src: PREVIEWS[(num - 1) % PREVIEWS.length],
-    cover: track.cover,
+    cover: resolveCover(track),
     genre: track.genre,
   }
 }

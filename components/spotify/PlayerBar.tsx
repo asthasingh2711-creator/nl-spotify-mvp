@@ -4,6 +4,7 @@ import type { CSSProperties } from 'react'
 import { SkipBack, SkipForward, Play, Pause, Volume2, Volume1, VolumeX, Shuffle, Repeat } from 'lucide-react'
 import { formatDuration } from '@/lib/catalog'
 import { usePlayer } from '@/context/PlayerContext'
+import { CoverImage } from './CoverImage'
 
 export function PlayerBar() {
   const { currentTrack, isPlaying, progress, duration, volume, togglePlay, playNext, playPrevious, seek, setVolume } = usePlayer()
@@ -15,7 +16,7 @@ export function PlayerBar() {
       <div className="flex min-w-0 items-center gap-3">
         {currentTrack ? (
           <>
-            <img src={currentTrack.cover} alt="" className="h-14 w-14 rounded object-cover" />
+            <CoverImage src={currentTrack.cover} seed={currentTrack.id} className="h-14 w-14 rounded object-cover" />
             <div className="min-w-0">
               <p className="truncate text-sm font-medium">{currentTrack.title}</p>
               <p className="truncate text-xs text-spotify-text">{currentTrack.artist}</p>

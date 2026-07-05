@@ -1,6 +1,7 @@
 import { getSpotifyAccessToken } from './auth'
 import type { SpotifyTrack } from './types'
 import type { PlayableTrack } from '@/lib/catalog'
+import { stockCover } from '@/lib/stock-images'
 
 const SPOTIFY_API = 'https://api.spotify.com/v1'
 /** Spotify search limit for this app tier (requests above 10 return 400). */
@@ -36,14 +37,14 @@ export function spotifyTrackToPlayable(track: SpotifyTrack): PlayableTrack {
     album: track.album.name,
     duration: Math.round(track.duration_ms / 1000),
     src: track.preview_url ?? '',
-    cover: track.album.images[0]?.url ?? '',
+    cover: track.album.images[0]?.url || stockCover(track.id),
     genre: 'spotify',
     spotifyUrl: track.external_urls.spotify,
     hasPreview: Boolean(track.preview_url),
   }
 }
 
-export async function searchSpotifyTracks(query: string, limit = 10): Promise<PlayableTrack[]> {
+export async function searchSpotifyTracksRaw(query: string, limit = 10): Promise<SpotifyTrack[]> {
   const safeLimit = Math.min(Math.max(limit, 1), SPOTIFY_SEARCH_MAX)
   const data = await spotifyFetch<{ tracks: { items: SpotifyTrack[] } }>('/search', {
     q: query,
@@ -51,7 +52,11 @@ export async function searchSpotifyTracks(query: string, limit = 10): Promise<Pl
     limit: String(safeLimit),
     market: 'US',
   })
-  return data.tracks.items.map(spotifyTrackToPlayable)
+  return data.tracks.items
+}
+
+export async function searchSpotifyTracks(query: string, limit = 10): Promise<PlayableTrack[]> {
+  return (await searchSpotifyTracksRaw(query, limit)).map(spotifyTrackToPlayable)
 }
 
 export async function getSpotifyTrack(trackId: string): Promise<PlayableTrack> {

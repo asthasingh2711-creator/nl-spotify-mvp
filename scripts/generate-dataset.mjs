@@ -76,12 +76,23 @@ function genreProfile(genre) {
   return profiles[genre] || profiles.pop
 }
 
-const COVER_HUES = [260, 200, 30, 120, 0, 280, 180, 45, 320, 160]
+const COVER_PHOTOS = [
+  'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop',
+  'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&h=300&fit=crop',
+  'https://images.unsplash.com/photo-1511379938546-c1f69419868d?w=300&h=300&fit=crop',
+  'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&h=300&fit=crop',
+  'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=300&h=300&fit=crop',
+  'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=300&h=300&fit=crop',
+  'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&h=300&fit=crop',
+  'https://images.unsplash.com/photo-1478737272769-f78547fd2025?w=300&h=300&fit=crop',
+  'https://images.unsplash.com/photo-1519741497674-611481863552?w=300&h=300&fit=crop',
+  'https://images.unsplash.com/photo-1529636798458-921d1dae0c24?w=300&h=300&fit=crop',
+]
 
 function coverUrl(id) {
-  const hue = COVER_HUES[id.charCodeAt(id.length - 1) % COVER_HUES.length]
-  const sat = Math.floor(rand(80, 255)).toString(16).padStart(2, '0')
-  return `https://placehold.co/300x300/1a1a1a/${hue.toString(16).padStart(2, '0')}${sat}?text=%E2%99%AA`
+  let n = 0
+  for (const c of id) n += c.charCodeAt(0)
+  return COVER_PHOTOS[n % COVER_PHOTOS.length]
 }
 
 const tracks = []

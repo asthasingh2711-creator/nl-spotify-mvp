@@ -3,6 +3,7 @@
 import { Clock, Play, Pause } from 'lucide-react'
 import { getPlaylistById } from '@/lib/catalog'
 import { SongRow } from './SongRow'
+import { CoverImage } from './CoverImage'
 import { usePlayer } from '@/context/PlayerContext'
 
 export function PlaylistView({ playlistId }: { playlistId: string }) {
@@ -16,7 +17,7 @@ export function PlaylistView({ playlistId }: { playlistId: string }) {
   return (
     <div className="flex h-full flex-col overflow-y-auto">
       <div className="flex shrink-0 items-end gap-6 bg-gradient-to-b from-indigo-900 to-spotify-dark px-6 pt-20 pb-6">
-        <img src={playlist.cover} alt="" className="h-52 w-52 rounded shadow-2xl" />
+        <CoverImage src={playlist.cover} seed={playlist.id} className="h-52 w-52 rounded shadow-2xl" />
         <div>
           <p className="mb-2 text-xs font-bold uppercase">Playlist</p>
           <h1 className="mb-4 text-5xl font-black">{playlist.name}</h1>

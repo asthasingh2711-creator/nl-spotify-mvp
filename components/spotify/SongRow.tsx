@@ -3,6 +3,7 @@
 import { Play, Pause } from 'lucide-react'
 import { formatDuration, type PlayableTrack } from '@/lib/catalog'
 import { usePlayer } from '@/context/PlayerContext'
+import { CoverImage } from './CoverImage'
 
 export function SongRow({ track, index, queue }: { track: PlayableTrack; index: number; queue: PlayableTrack[] }) {
   const { currentTrack, isPlaying, playTrack, togglePlay } = usePlayer()
@@ -31,7 +32,7 @@ export function SongRow({ track, index, queue }: { track: PlayableTrack; index: 
         )}
       </div>
       <div className="flex min-w-0 items-center gap-3">
-        <img src={track.cover} alt="" className="h-10 w-10 rounded object-cover" />
+        <CoverImage src={track.cover} seed={track.id} className="h-10 w-10 rounded object-cover" />
         <div className="min-w-0">
           <p className={`truncate font-medium ${isCurrent ? 'text-spotify-green' : 'text-white'}`}>{track.title}</p>
           <p className="truncate">{track.artist}</p>

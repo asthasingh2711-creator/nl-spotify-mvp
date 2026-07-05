@@ -18,10 +18,12 @@ try {
   }
 } catch {}
 
-// Remove corrupted dev cache if present
+// Remove corrupted dev cache on start (full .next in dev:clean; cache only here)
 const nextDir = join(root, '.next')
 if (existsSync(nextDir)) {
   rmSync(join(nextDir, 'cache'), { recursive: true, force: true })
+  // Stale webpack chunks cause "__webpack_modules__[moduleId] is not a function"
+  rmSync(join(nextDir, 'static', 'chunks'), { recursive: true, force: true })
 }
 
 console.log(`Starting Next.js on http://localhost:${port}`)
