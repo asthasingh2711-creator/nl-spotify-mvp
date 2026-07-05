@@ -17,7 +17,9 @@ Rules:
 - Resolve contradictions: "depression uplifting" = melancholy but hopeful, NOT pure sad OR pure party.
 - Multi-genre: "country hip hop soothing" = blend queries like "country hip hop chill", "soothing country rap".
 - Never output abstract phrases alone ("feeling blue") — always add genre/mood keywords Spotify can match.
-- Personalize when user taste context is provided.
+- Personalize language/genre from user taste when it fits — but the User request defines the occasion. Do NOT map generic "celebration" or "joyful" to wedding/bridal unless the user explicitly asks for wedding, bridal, varmala, or baraat.
+- Disambiguate occasions: newborn/baby shower/namkaran ≠ wedding; birthday party ≠ wedding; graduation ≠ wedding. Match the specific life event, not the broadest "celebratory" bucket.
+- When user taste includes bridal/wedding, treat it as one library theme — not a default for every happy or festive request.
 
 Examples:
 User: depression uplifting sound
@@ -57,7 +59,13 @@ User: cyberpunk night drive
 {"playlist_name":"Neon Velocity","summary":"Synthwave and electronic music for futuristic nights.","search_queries":["cyberpunk synthwave","night drive electronic","retro future","dark synth"],"avoid":["acoustic folk"]}
 
 User: peaceful but powerful
-{"playlist_name":"Still Strong","summary":"Emotionally uplifting tracks with restrained intensity.","search_queries":["cinematic post rock","epic ambient","powerful orchestral","hopeful instrumental"],"avoid":["death metal"]}`
+{"playlist_name":"Still Strong","summary":"Emotionally uplifting tracks with restrained intensity.","search_queries":["cinematic post rock","epic ambient","powerful orchestral","hopeful instrumental"],"avoid":["death metal"]}
+
+User: newborn boy celebration
+{"playlist_name":"Welcome Little One","summary":"Sweet, joyful Hindi and Bollywood for a newborn baby boy — family celebration, not wedding music.","search_queries":["baby boy hindi songs","newborn celebration bollywood","joyful lullaby hindi","namkaran songs"],"avoid":["wedding","bridal","varmala","baraat"]}
+
+User: birthday party upbeat hindi
+{"playlist_name":"Birthday Bash","summary":"Upbeat Hindi party tracks for a birthday — fun and festive, not wedding procession music.","search_queries":["birthday party hindi","upbeat bollywood party","hindi celebration dance","fun bollywood hits"],"avoid":["wedding","bridal","varmala"]}`
 
 async function callOpenAiPlanner(userPrompt: string): Promise<string> {
   const apiKey = process.env.OPENAI_API_KEY
@@ -170,7 +178,7 @@ function wordsOrDefault(text: string, fallback: string): string {
 function buildUserMessage(intent: string): string {
   const taste = getTasteSummary()
   const keywords = getUserTasteKeywords().slice(0, 8).join(', ')
-  return `User request: ${intent}\nUser taste: ${taste}\nLibrary keywords: ${keywords || 'none'}`
+  return `User request: ${intent}\nUser taste (background genre preference only): ${taste}\nLibrary keywords: ${keywords || 'none'}\nImportant: Match the User request occasion exactly — do not substitute wedding/bridal themes unless explicitly requested.`
 }
 
 async function maybeLogTraining(intent: string, plan: SpotifyQueryPlan, source: 'llm' | 'mock') {
