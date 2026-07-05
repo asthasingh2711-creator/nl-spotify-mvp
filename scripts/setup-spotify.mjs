@@ -27,6 +27,8 @@ function writeEnv(vars) {
     `SPOTIFY_CLIENT_ID=${vars.SPOTIFY_CLIENT_ID ?? ''}`,
     `SPOTIFY_CLIENT_SECRET=${vars.SPOTIFY_CLIENT_SECRET ?? ''}`,
   ]
+  if (vars.GEMINI_API_KEY) lines.push(`GEMINI_API_KEY=${vars.GEMINI_API_KEY}`)
+  if (vars.GEMINI_MODEL) lines.push(`GEMINI_MODEL=${vars.GEMINI_MODEL}`)
   if (vars.OPENAI_API_KEY) lines.push(`OPENAI_API_KEY=${vars.OPENAI_API_KEY}`)
   if (vars.OPENAI_MODEL) lines.push(`OPENAI_MODEL=${vars.OPENAI_MODEL}`)
   if (vars.NEXT_PUBLIC_APP_URL) lines.push(`NEXT_PUBLIC_APP_URL=${vars.NEXT_PUBLIC_APP_URL}`)

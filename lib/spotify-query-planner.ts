@@ -1,3 +1,4 @@
+import { callGeminiJson, hasGeminiKey, hasPlannerKey } from './gemini'
 import { hasLlmKey } from './llm'
 import { getTasteSummary, getUserTasteKeywords } from './user-taste'
 
@@ -28,9 +29,9 @@ User: country hip hop soothing music
 User: sad like lovely
 {"playlist_name":"Like Lovely","summary":"Emotional, intimate ballads similar to Billie Eilish & Khalid.","search_queries":["lovely billie eilish","sad intimate pop","emotional duet ballad","melancholy pop duet"],"avoid":[]}`
 
-async function callPlannerLlm(userPrompt: string): Promise<string> {
+async function callOpenAiPlanner(userPrompt: string): Promise<string> {
   const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) throw new Error('No API key')
+  if (!apiKey) throw new Error('No OpenAI API key')
 
   const model = process.env.OPENAI_QUERY_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini'
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -52,11 +53,18 @@ async function callPlannerLlm(userPrompt: string): Promise<string> {
 
   if (!res.ok) {
     const err = await res.text()
-    throw new Error(`LLM planner error ${res.status}: ${err}`)
+    throw new Error(`OpenAI planner error ${res.status}: ${err}`)
   }
 
   const data = (await res.json()) as { choices: { message: { content: string } }[] }
   return data.choices[0]?.message?.content ?? ''
+}
+
+async function callPlannerLlm(userPrompt: string): Promise<string> {
+  if (hasGeminiKey()) {
+    return callGeminiJson(SYSTEM, userPrompt)
+  }
+  return callOpenAiPlanner(userPrompt)
 }
 
 function parsePlan(raw: string): SpotifyQueryPlan {
@@ -73,7 +81,7 @@ function parsePlan(raw: string): SpotifyQueryPlan {
   }
 }
 
-function mockPlan(intent: string): SpotifyQueryPlan {
+function mockPlan(intent: string, summaryOverride?: string): SpotifyQueryPlan {
   const text = intent.toLowerCase().trim()
   const queries: string[] = []
 
@@ -96,11 +104,32 @@ function mockPlan(intent: string): SpotifyQueryPlan {
   const taste = getUserTasteKeywords().slice(0, 2)
   if (taste.length) queries.push(`${taste.join(' ')} ${wordsOrDefault(text, 'mix')}`)
 
+  const defaultSummary = hasPlannerKey()
+    ? `Curated for "${intent}" — AI planner unavailable, using keyword fallback.`
+    : `Curated for "${intent}" — add GEMINI_API_KEY for smarter query planning.`
+
   return {
     playlist_name: `AI Mix · ${intent.slice(0, 48)}`,
-    summary: `Curated for "${intent}" — add OPENAI_API_KEY for smarter query planning.`,
+    summary: summaryOverride ?? defaultSummary,
     search_queries: [...new Set(queries.map((q) => q.trim()).filter(Boolean))].slice(0, 5),
   }
+}
+
+function llmFailureSummary(intent: string, err: unknown): string {
+  const msg = err instanceof Error ? err.message : String(err)
+  if (/429|quota|insufficient_quota|RESOURCE_EXHAUSTED/i.test(msg)) {
+    if (hasGeminiKey()) {
+      return `Curated for "${intent}" — Gemini rate limit hit. Wait a moment or check aistudio.google.com quotas.`
+    }
+    return `Curated for "${intent}" — OpenAI billing/quota issue. Add payment at platform.openai.com/account/billing.`
+  }
+  if (/401|403|invalid|API key|PERMISSION_DENIED/i.test(msg)) {
+    if (hasGeminiKey()) {
+      return `Curated for "${intent}" — Gemini API key invalid. Check GEMINI_API_KEY in .env.local.`
+    }
+    return `Curated for "${intent}" — OpenAI API key is invalid. Check OPENAI_API_KEY in .env.local.`
+  }
+  return `Curated for "${intent}" — AI planner failed, using keyword fallback.`
 }
 
 function wordsOrDefault(text: string, fallback: string): string {
@@ -114,7 +143,6 @@ function buildUserMessage(intent: string): string {
   return `User request: ${intent}\nUser taste: ${taste}\nLibrary keywords: ${keywords || 'none'}`
 }
 
-/** Log prompt + plan pairs for future fine-tuning (set LOG_AI_QUERIES=1). */
 async function maybeLogTraining(intent: string, plan: SpotifyQueryPlan, source: 'llm' | 'mock') {
   if (process.env.LOG_AI_QUERIES !== '1') return
   try {
@@ -138,7 +166,7 @@ async function maybeLogTraining(intent: string, plan: SpotifyQueryPlan, source: 
 
 export async function planSpotifySearch(intent: string): Promise<{ plan: SpotifyQueryPlan; mode: 'llm' | 'mock' }> {
   const trimmed = intent.trim()
-  if (hasLlmKey()) {
+  if (hasPlannerKey()) {
     try {
       const raw = await callPlannerLlm(buildUserMessage(trimmed))
       const plan = parsePlan(raw)
@@ -146,6 +174,9 @@ export async function planSpotifySearch(intent: string): Promise<{ plan: Spotify
       return { plan, mode: 'llm' }
     } catch (err) {
       console.error('LLM query planner failed, using mock:', err)
+      const plan = mockPlan(trimmed, llmFailureSummary(trimmed, err))
+      await maybeLogTraining(trimmed, plan, 'mock')
+      return { plan, mode: 'mock' }
     }
   }
   const plan = mockPlan(trimmed)
