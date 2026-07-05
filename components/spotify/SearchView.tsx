@@ -67,7 +67,16 @@ export function SearchView() {
               Searching…
             </div>
           ) : results.length === 0 ? (
-            <p className="text-spotify-text">No results for &quot;{query}&quot;</p>
+            <div className="text-spotify-text">
+              <p>No results for &quot;{query}&quot;</p>
+              {mode === 'demo' && (
+                <p className="mt-2 text-sm">
+                  Demo catalog has limited tracks.{' '}
+                  <a href="/setup" className="text-spotify-green hover:underline">Connect Spotify</a>
+                  {' '}for live search.
+                </p>
+              )}
+            </div>
           ) : (
             <>
               <div className="mb-2 grid grid-cols-[16px_4fr_2fr_1fr] gap-4 border-b border-white/10 px-4 pb-2 text-xs uppercase text-spotify-text">
