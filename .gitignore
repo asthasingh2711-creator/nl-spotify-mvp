@@ -28,3 +28,4 @@ data/training-log.jsonl
 *.njsproj
 *.sln
 *.sw?
+.vercel
