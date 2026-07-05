@@ -27,7 +27,37 @@ User: country hip hop soothing music
 {"playlist_name":"Country Rap & Chill","summary":"Smooth country-hip-hop crossover and soothing rap-folk blends.","search_queries":["country hip hop chill","soothing country rap","acoustic hip hop country","country trap mellow"],"avoid":[]}
 
 User: sad like lovely
-{"playlist_name":"Like Lovely","summary":"Emotional, intimate ballads similar to Billie Eilish & Khalid.","search_queries":["lovely billie eilish","sad intimate pop","emotional duet ballad","melancholy pop duet"],"avoid":[]}`
+{"playlist_name":"Like Lovely","summary":"Emotional, intimate ballads similar to Billie Eilish & Khalid.","search_queries":["lovely billie eilish","sad intimate pop","emotional duet ballad","melancholy pop duet"],"avoid":[]}
+
+User: music that feels like watching rain through a train window
+{"playlist_name":"Passing Landscapes","summary":"Atmospheric indie and ambient music for reflective journeys.","search_queries":["rainy day indie","dream pop ambient","indie train ride","nostalgic folk acoustic"],"avoid":["hardstyle","party"]}
+
+User: old money elegance
+{"playlist_name":"Old Money Evenings","summary":"Sophisticated classical, jazz and luxury lounge sounds.","search_queries":["luxury lounge","modern classical","smooth jazz evening","old money aesthetic"],"avoid":["hyperpop","hardstyle"]}
+
+User: main character at sunrise
+{"playlist_name":"Golden Hour","summary":"Cinematic hopeful tracks for a fresh start.","search_queries":["cinematic sunrise","hopeful indie","golden hour folk","uplifting ambient"],"avoid":["screamo"]}
+
+User: studying in a library
+{"playlist_name":"Quiet Chapters","summary":"Instrumental focus music with minimal distractions.","search_queries":["focus instrumental","study piano","ambient reading","deep focus playlist"],"avoid":["podcast","comedy"]}
+
+User: driving through mountains
+{"playlist_name":"Open Roads","summary":"Expansive indie, folk and rock for scenic drives.","search_queries":["mountain road trip","indie roadtrip","folk driving","cinematic rock"],"avoid":["club remix"]}
+
+User: healing after heartbreak
+{"playlist_name":"Healing Slowly","summary":"Gentle songs about growth and moving on.","search_queries":["healing indie","hopeful breakup songs","self love pop","soft acoustic healing"],"avoid":["revenge songs"]}
+
+User: music that smells like coffee
+{"playlist_name":"Coffee & Vinyl","summary":"Warm acoustic and lo-fi vibes for slow mornings.","search_queries":["coffeehouse acoustic","lofi cafe","warm indie folk","morning jazz"],"avoid":["festival edm"]}
+
+User: dark academia piano
+{"playlist_name":"Dark Academia","summary":"Classical piano and chamber music with literary ambience.","search_queries":["dark academia classical","solo piano","chamber music","classical study"],"avoid":["trap"]}
+
+User: cyberpunk night drive
+{"playlist_name":"Neon Velocity","summary":"Synthwave and electronic music for futuristic nights.","search_queries":["cyberpunk synthwave","night drive electronic","retro future","dark synth"],"avoid":["acoustic folk"]}
+
+User: peaceful but powerful
+{"playlist_name":"Still Strong","summary":"Emotionally uplifting tracks with restrained intensity.","search_queries":["cinematic post rock","epic ambient","powerful orchestral","hopeful instrumental"],"avoid":["death metal"]}`
 
 async function callOpenAiPlanner(userPrompt: string): Promise<string> {
   const apiKey = process.env.OPENAI_API_KEY
